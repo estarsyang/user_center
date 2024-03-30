@@ -2,6 +2,7 @@ package com.yang.usercenter.service;
 
 import com.yang.usercenter.model.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
 * @author ddayang
@@ -10,4 +11,15 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface UserService extends IService<User> {
 
+
+    /**
+     *
+     * @param userAccount account
+     * @param userPassword password
+     * @param checkPassword confirm password
+     * @return new user id
+     */
+    long userRegister(String userAccount, String userPassword, String checkPassword);
+
+    User userLogin(String userAccount, String userPassword, HttpServletRequest request);
 }

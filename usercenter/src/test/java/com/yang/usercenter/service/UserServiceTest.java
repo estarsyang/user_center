@@ -35,4 +35,21 @@ class UserServiceTest {
         Assertions.assertTrue(resulst);
 
     }
+
+    @Test
+    void userRegister() {
+
+        String userAccount = "ads";
+        String userPassword = "12345678";
+        String checkPassord = "12345678";
+
+//        long result = userService.userRegister(userAccount, userPassword,checkPassord);
+//        Assertions.assertEquals(-1, result);
+
+        userAccount = "estar";
+
+        long result = userService.userRegister(userAccount, userPassword,checkPassord);
+        Assertions.assertEquals(0, result);
+
+    }
 }
