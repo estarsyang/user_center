@@ -1,5 +1,6 @@
 package com.yang.usercenter.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yang.usercenter.model.domain.User;
 import com.yang.usercenter.model.domain.request.UserLoginRquest;
 import com.yang.usercenter.model.domain.request.UserRegisterRquest;
@@ -11,6 +12,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.yang.usercenter.constant.UserConstant.DEFAULT_ROLE;
+import static com.yang.usercenter.constant.UserConstant.USER_LOGIN_STATE;
 
 @RestController
 @RequestMapping("/user")
@@ -60,4 +67,46 @@ public class UserController {
 
         return user;
     }
+
+    @PostMapping("/search")
+    public List<User> searchUser(String userName, HttpServletRequest request){
+        if(!isAdmin(request)){
+            return new ArrayList<>();
+        }
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+
+        if (StringUtils.isNotBlank(userName)){
+            queryWrapper.like("userName", userName);
+
+        }
+
+        return userService.list(queryWrapper);
+    }
+
+    @PostMapping("/delete")
+    public boolean deleteUser(@RequestBody long id, HttpServletRequest request){
+
+        if (!isAdmin(request)){
+            return false;
+        }
+
+        if (id <=0){
+            return false;
+        }
+        /**
+         * open mybatisPlus logical delete, so it will update status not delete data
+         */
+        return userService.removeById(id);
+    }
+
+    private boolean isAdmin(HttpServletRequest request){
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+
+        User user = (User) userObj;
+
+        return user != null && user.getId() != DEFAULT_ROLE;
+    }
+
+
 }

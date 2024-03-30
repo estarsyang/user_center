@@ -15,6 +15,8 @@ import org.springframework.util.DigestUtils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.yang.usercenter.constant.UserConstant.USER_LOGIN_STATE;
+
 /**
  * @author ddayang
  * @description use service
@@ -29,7 +31,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private UserMapper userMapper;
     private  static final String SALT = "test";
 
-    private static final String USER_LOGIN_STATE = "user_login_state";
+
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
