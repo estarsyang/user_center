@@ -7,6 +7,8 @@ spring:
     password: 12345678
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  session:
+    timeout: 86400
 
 server:
   port: 8080

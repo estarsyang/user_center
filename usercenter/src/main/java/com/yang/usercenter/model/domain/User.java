@@ -1,10 +1,10 @@
 package com.yang.usercenter.model.domain;
 
 import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Data;
 
 /**
  * 
@@ -22,7 +22,7 @@ public class User implements Serializable {
     /**
      * 用户名
      */
-    private String username;
+    private String userName;
 
     /**
      * 头像
@@ -67,7 +67,6 @@ public class User implements Serializable {
     /**
      * 是否删除
      */
-
     @TableLogic
     private Integer isDelete;
 
@@ -75,6 +74,11 @@ public class User implements Serializable {
      * 
      */
     private String avatarUrl;
+
+    /**
+     * 普通用户 0 管理员 1
+     */
+    private Integer userRole;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

@@ -1,20 +1,25 @@
 package com.yang.usercenter.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.yang.usercenter.common.BaseResponse;
+import com.yang.usercenter.common.ErrorCode;
+import com.yang.usercenter.common.ResultUtils;
+import com.yang.usercenter.exception.BusinessException;
 import com.yang.usercenter.model.domain.User;
+import com.yang.usercenter.model.domain.request.UserDelete;
 import com.yang.usercenter.model.domain.request.UserLoginRquest;
 import com.yang.usercenter.model.domain.request.UserRegisterRquest;
+import com.yang.usercenter.model.domain.request.UserSearch;
 import com.yang.usercenter.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yang.usercenter.constant.UserConstant.DEFAULT_ROLE;
 import static com.yang.usercenter.constant.UserConstant.USER_LOGIN_STATE;
@@ -32,48 +37,60 @@ public class UserController {
      * @return
      */
     @PostMapping("/register")
-    public Long userRegister(@RequestBody UserRegisterRquest userRegisterRquest){
-
-        if (userRegisterRquest == null){
-            return null;
-        }
+    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRquest userRegisterRquest){
 
         String userAccount = userRegisterRquest.getUserAccount();
         String userPassword = userRegisterRquest.getUserPassword();
         String checkPassword = userRegisterRquest.getCheckPassword();
 
         if(StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)){
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"params error");
         }
 
-        long id = userService.userRegister(userAccount, userPassword, checkPassword);
+        long result = userService.userRegister(userAccount, userPassword, checkPassword);
 
-        return id;
+        return ResultUtils.success(result);
     }
 
     @PostMapping("/login")
-    public User userLogin(@RequestBody UserLoginRquest userLoginRquest, HttpServletRequest httpServletRequest){
-        if (userLoginRquest == null){
-            return null;
-        }
+    public BaseResponse<User> userLogin(@RequestBody UserLoginRquest userLoginRquest, HttpServletRequest httpServletRequest){
+
         String userAccount = userLoginRquest.getUserAccount();
         String userPassword = userLoginRquest.getUserPassword();
 
         if(StringUtils.isAnyBlank(userAccount, userPassword)){
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"params error");
         }
 
         User user = userService.userLogin(userAccount, userPassword, httpServletRequest);
 
-        return user;
+        return ResultUtils.success(user);
     }
 
+    @GetMapping("/current")
+    public BaseResponse<User> getCurrentUser(HttpServletRequest request){
+        HttpSession session = request.getSession();
+        Object userObj = session.getAttribute(USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+
+        User user = userService.getById(currentUser.getId());
+
+        return ResultUtils.success( userService.getSafetyUser(user));
+    }
+
+    @PostMapping("/logout")
+    public BaseResponse userLogout(HttpServletRequest request){
+
+        userService.userLogout(request);
+        return ResultUtils.success(null);
+    }
     @PostMapping("/search")
-    public List<User> searchUser(String userName, HttpServletRequest request){
+    public BaseResponse<List<User>> searchUser(@RequestBody UserSearch userSearch, HttpServletRequest request){
         if(!isAdmin(request)){
-            return new ArrayList<>();
+            return ResultUtils.success(new ArrayList<>());
         }
 
+        String userName = userSearch.getUserName();
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
 
         if (StringUtils.isNotBlank(userName)){
@@ -81,32 +98,45 @@ public class UserController {
 
         }
 
-        return userService.list(queryWrapper);
+        List<User> userList = userService.list(queryWrapper);
+        return ResultUtils.success(userList.stream().map((user)->{
+            user.setUserPassword(null);
+            return userService.getSafetyUser(user);
+        }).collect(Collectors.toList()));
+
     }
 
     @PostMapping("/delete")
-    public boolean deleteUser(@RequestBody long id, HttpServletRequest request){
+    public BaseResponse deleteUser(@RequestBody UserDelete userDelete, HttpServletRequest request){
 
         if (!isAdmin(request)){
-            return false;
+            throw new BusinessException(ErrorCode.NO_AUTH,"you don't have this auth");
         }
 
+        long id = userDelete.getId();
+
         if (id <=0){
-            return false;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"params error");
         }
         /**
          * open mybatisPlus logical delete, so it will update status not delete data
          */
-        return userService.removeById(id);
+        userService.removeById(id);
+        return ResultUtils.success(null);
     }
 
     private boolean isAdmin(HttpServletRequest request){
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        HttpSession session = request.getSession();
+        Object userObj = session.getAttribute(USER_LOGIN_STATE);
 
         User user = (User) userObj;
 
-        return user != null && user.getId() != DEFAULT_ROLE;
+        if (user == null || user.getUserRole() == DEFAULT_ROLE){
+            return false;
+        }
+        return true;
     }
+
 
 
 }

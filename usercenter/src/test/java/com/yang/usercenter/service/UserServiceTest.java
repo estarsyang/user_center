@@ -1,6 +1,8 @@
 package com.yang.usercenter.service;
 import java.util.Date;
+import java.util.List;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yang.usercenter.model.domain.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,7 @@ class UserServiceTest {
 
         User user = new User();
 
-        user.setUsername("tom");
+        user.setUserName("tom");
         user.setUserAccount("tom123");
         user.setGender(0);
         user.setUserPassword("123");
@@ -51,5 +53,15 @@ class UserServiceTest {
         long result = userService.userRegister(userAccount, userPassword,checkPassord);
         Assertions.assertEquals(0, result);
 
+    }
+
+    @Test
+    public void testSearch(){
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        User user = new User();
+        user.setUserName("tom");
+        queryWrapper.like("userName",user);
+        List<User> list = userService.list(queryWrapper);
+        System.out.println(list);
     }
 }
